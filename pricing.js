@@ -20,8 +20,9 @@ function getCookie(name) {
 
 function runAllLogic() {
   const country = getCookie("countryCookie");
-  
-  // 1. Pricing Logic (USD, INR, GBP)
+  console.log("Script is running. Detected Country Cookie:", country); // DEBUG LOG
+
+  // 1. Pricing Logic
   const priceElements = document.querySelectorAll("[data-ind][data-usd], [data-gbp]");
   priceElements.forEach(element => {
     if (country === "IN") {
@@ -33,13 +34,15 @@ function runAllLogic() {
     }
   });
 
-  // 2. Visibility Logic (Built in India Section)
+  // 2. Visibility Logic (Improved with Delay & !important)
   const visibilityElements = document.querySelectorAll("[data-country-target]");
+  console.log("Found visibility elements:", visibilityElements.length); // DEBUG LOG
+
   visibilityElements.forEach(element => {
     const targetCountry = element.getAttribute("data-country-target");
     if (country === "IN" && targetCountry === "IN") {
-      // Use !important to override the Webflow 'Display: None'
-      element.style.setProperty("display", "block", "important"); 
+       console.log("Match found for India. Showing section..."); // DEBUG LOG
+       element.style.setProperty("display", "block", "important"); 
     } else {
       element.style.setProperty("display", "none", "important");
     }
@@ -49,18 +52,20 @@ function runAllLogic() {
 async function getGeoCountry() {
   try {
     const response = await fetch("https://get.geojs.io/v1/ip/country.json");
-    if (!response.ok) throw new Error("Network response was not ok");
     const data = await response.json();
-    geoCountry = data;
-    setCookie("countryCookie", geoCountry.country, 30);
+    setCookie("countryCookie", data.country, 30);
     runAllLogic();
   } catch (error) {
+    console.error("Geo API failed:", error);
     runAllLogic();
   }
 }
 
-if (!getCookie("countryCookie")) {
-  getGeoCountry();
+// Start the script only after the DOM is fully loaded
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => {
+    if (!getCookie("countryCookie")) getGeoCountry(); else runAllLogic();
+  });
 } else {
-  runAllLogic();
+  if (!getCookie("countryCookie")) getGeoCountry(); else runAllLogic();
 }
