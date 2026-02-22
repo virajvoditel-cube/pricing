@@ -1,4 +1,4 @@
-let geoCountry;
+console.log("!!! PRICING SCRIPT V1.7 IS LIVE !!!");
 
 function setCookie(name, value, days) {
   const date = new Date();
@@ -20,7 +20,7 @@ function getCookie(name) {
 
 function runAllLogic() {
   const country = getCookie("countryCookie");
-  console.log("Script is running. Detected Country Cookie:", country); // DEBUG LOG
+  console.log("Location detected as:", country);
 
   // 1. Pricing Logic
   const priceElements = document.querySelectorAll("[data-ind][data-usd], [data-gbp]");
@@ -34,17 +34,17 @@ function runAllLogic() {
     }
   });
 
-  // 2. Visibility Logic (Improved with Delay & !important)
+  // 2. Visibility Logic
   const visibilityElements = document.querySelectorAll("[data-country-target]");
-  console.log("Found visibility elements:", visibilityElements.length); // DEBUG LOG
+  console.log("Targeting visibility for:", visibilityElements.length, "elements");
 
   visibilityElements.forEach(element => {
     const targetCountry = element.getAttribute("data-country-target");
     if (country === "IN" && targetCountry === "IN") {
-       console.log("Match found for India. Showing section..."); // DEBUG LOG
+       console.log("Success: Setting India section to visible.");
        element.style.setProperty("display", "block", "important"); 
     } else {
-      element.style.setProperty("display", "none", "important");
+       element.style.setProperty("display", "none", "important");
     }
   });
 }
@@ -56,16 +56,13 @@ async function getGeoCountry() {
     setCookie("countryCookie", data.country, 30);
     runAllLogic();
   } catch (error) {
-    console.error("Geo API failed:", error);
     runAllLogic();
   }
 }
 
-// Start the script only after the DOM is fully loaded
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () => {
-    if (!getCookie("countryCookie")) getGeoCountry(); else runAllLogic();
-  });
+// Immediate execution attempt
+if (!getCookie("countryCookie")) {
+  getGeoCountry();
 } else {
-  if (!getCookie("countryCookie")) getGeoCountry(); else runAllLogic();
+  runAllLogic();
 }
