@@ -1,4 +1,4 @@
-console.log("!!! PRICING SCRIPT V1.7 IS LIVE !!!");
+console.log("!!! PRICING SCRIPT V2.0 IS RUNNING !!!");
 
 function setCookie(name, value, days) {
   const date = new Date();
@@ -20,7 +20,7 @@ function getCookie(name) {
 
 function runAllLogic() {
   const country = getCookie("countryCookie");
-  console.log("Location detected as:", country);
+  console.log("Cookie found:", country);
 
   // 1. Pricing Logic
   const priceElements = document.querySelectorAll("[data-ind][data-usd], [data-gbp]");
@@ -36,12 +36,12 @@ function runAllLogic() {
 
   // 2. Visibility Logic
   const visibilityElements = document.querySelectorAll("[data-country-target]");
-  console.log("Targeting visibility for:", visibilityElements.length, "elements");
+  console.log("Checking visibility for", visibilityElements.length, "elements");
 
   visibilityElements.forEach(element => {
     const targetCountry = element.getAttribute("data-country-target");
     if (country === "IN" && targetCountry === "IN") {
-       console.log("Success: Setting India section to visible.");
+       console.log("India detected. Forcing section to display.");
        element.style.setProperty("display", "block", "important"); 
     } else {
        element.style.setProperty("display", "none", "important");
@@ -49,20 +49,21 @@ function runAllLogic() {
   });
 }
 
-async function getGeoCountry() {
-  try {
-    const response = await fetch("https://get.geojs.io/v1/ip/country.json");
-    const data = await response.json();
-    setCookie("countryCookie", data.country, 30);
-    runAllLogic();
-  } catch (error) {
-    runAllLogic();
-  }
-}
-
-// Immediate execution attempt
-if (!getCookie("countryCookie")) {
-  getGeoCountry();
-} else {
+// Main Execution
+const existingCookie = getCookie("countryCookie");
+if (existingCookie) {
+  console.log("Using existing cookie...");
   runAllLogic();
+} else {
+  console.log("No cookie. Fetching geo data...");
+  fetch("https://get.geojs.io/v1/ip/country.json")
+    .then(res => res.json())
+    .then(data => {
+      setCookie("countryCookie", data.country, 30);
+      runAllLogic();
+    })
+    .catch(err => {
+      console.error("Geo fetch failed:", err);
+      runAllLogic();
+    });
 }
