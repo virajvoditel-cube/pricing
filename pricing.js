@@ -1,7 +1,7 @@
-// Define the geoCountry variable
+// Define global variables
 let geoCountry;
 
-// Function to set a cookie
+// --- Helper: Set a Cookie ---
 function setCookie(name, value, days) {
   const date = new Date();
   date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
@@ -9,7 +9,7 @@ function setCookie(name, value, days) {
   document.cookie = `${name}=${value};${expires};path=/`;
 }
 
-// Function to get a cookie
+// --- Helper: Get a Cookie ---
 function getCookie(name) {
   const nameEQ = `${name}=`;
   const ca = document.cookie.split(";");
@@ -21,55 +21,59 @@ function getCookie(name) {
   return null;
 }
 
-// Function to fetch country information based on IP
+// --- Main Logic: Update Prices and Section Visibility ---
+function runAllLogic() {
+  const country = getCookie("countryCookie");
+  
+  // 1. ORIGINAL PRICING LOGIC (USD, INR, GBP)
+  const priceElements = document.querySelectorAll("[data-ind][data-usd], [data-gbp]");
+  if (priceElements.length > 0) {
+    for (let element of priceElements) {
+      if (country === "IN") {
+        element.textContent = element.getAttribute("data-ind");
+      } else if (country === "GB") {
+        element.textContent = element.getAttribute("data-gbp");
+      } else {
+        element.textContent = element.getAttribute("data-usd");
+      }
+    }
+  }
+
+  // 2. NEW VISIBILITY LOGIC (India-only Section)
+  const visibilityElements = document.querySelectorAll("[data-country-target]");
+  visibilityElements.forEach(element => {
+    const targetCountry = element.getAttribute("data-country-target");
+    // If user is in India, show the section; otherwise, keep it hidden
+    if (country === "IN" && targetCountry === "IN") {
+      element.style.display = "block"; 
+    } else {
+      element.style.display = "none";
+    }
+  });
+}
+
+// --- Fetch Location based on IP ---
 async function getGeoCountry() {
   try {
     const response = await fetch("https://get.geojs.io/v1/ip/country.json");
-
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
-    }
-
+    if (!response.ok) throw new Error("Network response was not ok");
     const data = await response.json();
     geoCountry = data;
 
     // Set cookie for 30 days
     setCookie("countryCookie", geoCountry.country, 30);
 
-    // Update the elements based on the country
-    updateElementsBasedOnCountry();
+    // Update the site
+    runAllLogic();
   } catch (error) {
-    // Fallback if fetch fails
-    updateElementsBasedOnCountry();
+    // If fetch fails, still run logic to show default USD prices
+    runAllLogic();
   }
 }
 
-// Function to update elements based on the country cookie
-function updateElementsBasedOnCountry() {
-  const country = getCookie("countryCookie");
-  
-  // Updated selector to include your new data-gbp attribute
-  const elements = document.querySelectorAll("[data-ind][data-usd], [data-gbp]");
-
-  if (elements.length > 0) {
-    for (let element of elements) {
-      if (country === "IN") {
-        // Show India pricing
-        element.textContent = element.getAttribute("data-ind");
-      } else if (country === "GB") {
-        // Show UK pricing - Logic added here
-        element.textContent = element.getAttribute("data-gbp");
-      } else {
-        // Show Default/USD pricing
-        element.textContent = element.getAttribute("data-usd");
-      }
-    }
-  }
-}
-
-// Check if the cookie is present
+// --- Initialize ---
 if (!getCookie("countryCookie")) {
   getGeoCountry();
 } else {
-  updateElementsBasedOnCountry();
+  runAllLogic();
 }
